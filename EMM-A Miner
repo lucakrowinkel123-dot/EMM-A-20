@@ -219,6 +219,7 @@ public Program ()
 
     LoadState();
     InitializeMineIndicatorSensors();
+    InitPathTimerHeader();
     Echo("Ready.");
     Runtime.UpdateFrequency = tickSpeed;
 }
@@ -856,6 +857,17 @@ bool AppendPathRecordLine(string line)
 string FormatOreAmount(double amount)
 {
     return ((long)Math.Floor(amount)).ToString("#,##0").Replace(",", ".");
+}
+
+void InitPathTimerHeader()
+{
+    IMyTimerBlock timer = FindPathTimer();
+    if (timer == null) return;
+    string data = timer.CustomData ?? "";
+    // Only add the header if no separator exists yet
+    if (data.Contains("---")) return;
+    string header = "Ore:\n----------------------------------\n";
+    timer.CustomData = header + data;
 }
 
 void WriteOreReportToPathTimer()
