@@ -1349,20 +1349,20 @@ bool HasMinerTag(IMyTerminalBlock b)
 
 void ApplyDockedPowerState()
 {
-    foreach (var g in allGyros)    if (HasMinerTag(g)) g.Enabled = false;
-    foreach (var t in allThrusters) if (HasMinerTag(t)) t.Enabled = false;
-    foreach (var a in antennas)    if (HasMinerTag(a)) a.Enabled = false;
-    foreach (var b in batteries) b.ChargeMode = ChargeMode.Recharge;
-    foreach (var h in hydrogenTanks) h.Stockpile = true;
+    foreach (var g in allGyros)      if (HasMinerTag(g)) g.Enabled = false;
+    foreach (var t in allThrusters)  if (HasMinerTag(t)) t.Enabled = false;
+    foreach (var a in antennas)      if (HasMinerTag(a)) a.Enabled = false;
+    foreach (var b in batteries)     if (HasMinerTag(b)) b.ChargeMode = ChargeMode.Recharge;
+    foreach (var h in hydrogenTanks) if (HasMinerTag(h)) h.Stockpile = true;
 }
 
 void ApplyUndockedPowerState()
 {
-    foreach (var g in allGyros)    if (HasMinerTag(g)) g.Enabled = true;
-    foreach (var t in allThrusters) if (HasMinerTag(t)) t.Enabled = true;
-    foreach (var a in antennas)    if (HasMinerTag(a)) a.Enabled = true;
-    foreach (var b in batteries) b.ChargeMode = ChargeMode.Auto;
-    foreach (var h in hydrogenTanks) h.Stockpile = false;
+    foreach (var g in allGyros)      if (HasMinerTag(g)) g.Enabled = true;
+    foreach (var t in allThrusters)  if (HasMinerTag(t)) t.Enabled = true;
+    foreach (var a in antennas)      if (HasMinerTag(a)) a.Enabled = true;
+    foreach (var b in batteries)     if (HasMinerTag(b)) b.ChargeMode = ChargeMode.Auto;
+    foreach (var h in hydrogenTanks) if (HasMinerTag(h)) h.Stockpile = false;
 }
 
 void CompleteDocking(string message)
