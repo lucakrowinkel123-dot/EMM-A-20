@@ -853,6 +853,70 @@ bool AppendPathRecordLine(string line)
     return true;
 }
 
+string FormatOreAmount(double amount)
+{
+    return ((long)Math.Floor(amount)).ToString("#,##0").Replace(",", ".");
+}
+
+void WriteOreReportToPathTimer()
+{
+    IMyTimerBlock timer = FindPathTimer();
+    if (timer == null) return;
+
+    // Collect ore amounts by subtype from "EMM-A Mi " tagged blocks only
+    var oreAmounts = new Dictionary<string, double>();
+    var tempBlocks = new List<IMyTerminalBlock>();
+    var tempItems  = new List<MyInventoryItem>();
+    GridTerminalSystem.GetBlocksOfType(tempBlocks,
+        b => b.CubeGrid.EntityId == Me.CubeGrid.EntityId && b.HasInventory && HasMinerTag(b));
+
+    foreach (var block in tempBlocks)
+    {
+        for (int i = 0; i < block.InventoryCount; i++)
+        {
+            var inv = block.GetInventory(i);
+            if (inv == null) continue;
+            tempItems.Clear();
+            inv.GetItems(tempItems);
+            foreach (var item in tempItems)
+            {
+                if (!string.Equals(item.Type.TypeId, "MyObjectBuilder_Ore", StringComparison.OrdinalIgnoreCase))
+                    continue;
+                string subtype = item.Type.SubtypeId;
+                double existing;
+                oreAmounts.TryGetValue(subtype, out existing);
+                oreAmounts[subtype] = existing + (double)item.Amount;
+            }
+        }
+    }
+
+    // Build new header
+    var header = new StringBuilder();
+    header.AppendLine("Ore:");
+    foreach (var kvp in oreAmounts)
+        header.AppendLine(kvp.Key + " " + FormatOreAmount(kvp.Value));
+    header.AppendLine("----------------------------------");
+
+    // Strip old header (everything up to and including the first --- line)
+    string existing2 = timer.CustomData ?? "";
+    string[] existingLines = existing2.Split(new[] { '\n', '\r' }, StringSplitOptions.RemoveEmptyEntries);
+    var pathPart = new StringBuilder();
+    bool pastSeparator = false;
+    foreach (string line in existingLines)
+    {
+        if (!pastSeparator)
+        {
+            if (line.Trim().StartsWith("---"))
+                pastSeparator = true;
+            continue;
+        }
+        pathPart.AppendLine(line);
+    }
+
+    timer.CustomData = header.ToString() + pathPart.ToString();
+    Echo("Ore report written to path timer.");
+}
+
 IMyTimerBlock FindPathTimer()
 {
     if (_cachedPathTimer != null &&
@@ -1331,6 +1395,7 @@ void UpdateDockingState()
         if (dockingComplete)
         {
             ApplyDockedPowerState();
+            WriteOreReportToPathTimer();
             CompleteDocking("Dock complete (connected).");
         }
     }
@@ -1487,9 +1552,16 @@ bool TryLoadPathRecordsFromTimer(out List<string> records, out string timerName)
     timerName = timer.CustomName;
     string data = timer.CustomData ?? "";
     string[] lines = data.Split(new [] { '\n', '\r' }, StringSplitOptions.RemoveEmptyEntries);
+    bool headerSkipped = false;
     foreach (string line in lines)
     {
         string rec = line.Trim();
+        if (!headerSkipped)
+        {
+            if (rec.StartsWith("---"))
+                headerSkipped = true;
+            continue;
+        }
         if (string.IsNullOrWhiteSpace(rec))
             continue;
         if (rec.StartsWith("\"") && rec.EndsWith("\"") && rec.Length >= 2)
