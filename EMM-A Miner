@@ -219,6 +219,7 @@ public Program ()
 
     LoadState();
     InitializeMineIndicatorSensors();
+    InitPathTimerHeader();
     Echo("Ready.");
     Runtime.UpdateFrequency = tickSpeed;
 }
@@ -858,6 +859,17 @@ string FormatOreAmount(double amount)
     return ((long)Math.Floor(amount)).ToString("#,##0").Replace(",", ".");
 }
 
+void InitPathTimerHeader()
+{
+    IMyTimerBlock timer = FindPathTimer();
+    if (timer == null) return;
+    string data = timer.CustomData ?? "";
+    // Only add the header if no separator exists yet
+    if (data.Contains("---")) return;
+    string header = "Ore:\n----------------------------------\n";
+    timer.CustomData = header + data;
+}
+
 void WriteOreReportToPathTimer()
 {
     IMyTimerBlock timer = FindPathTimer();
@@ -883,6 +895,8 @@ void WriteOreReportToPathTimer()
                 if (!string.Equals(item.Type.TypeId, "MyObjectBuilder_Ore", StringComparison.OrdinalIgnoreCase))
                     continue;
                 string subtype = item.Type.SubtypeId;
+                if (string.Equals(subtype, "Stone", StringComparison.OrdinalIgnoreCase))
+                    continue;
                 double existing;
                 oreAmounts.TryGetValue(subtype, out existing);
                 oreAmounts[subtype] = existing + (double)item.Amount;
@@ -897,20 +911,30 @@ void WriteOreReportToPathTimer()
         header.AppendLine(kvp.Key + " " + FormatOreAmount(kvp.Value));
     header.AppendLine("----------------------------------");
 
-    // Strip old header (everything up to and including the first --- line)
+    // Strip old header (everything up to and including the first --- line).
+    // If no separator exists yet, all existing lines are path records and are kept.
     string existing2 = timer.CustomData ?? "";
     string[] existingLines = existing2.Split(new[] { '\n', '\r' }, StringSplitOptions.RemoveEmptyEntries);
     var pathPart = new StringBuilder();
     bool pastSeparator = false;
+    bool hasSeparator = false;
     foreach (string line in existingLines)
     {
         if (!pastSeparator)
         {
             if (line.Trim().StartsWith("---"))
+            {
                 pastSeparator = true;
+                hasSeparator = true;
+            }
             continue;
         }
         pathPart.AppendLine(line);
+    }
+    if (!hasSeparator)
+    {
+        foreach (string line in existingLines)
+            pathPart.AppendLine(line);
     }
 
     timer.CustomData = header.ToString() + pathPart.ToString();
