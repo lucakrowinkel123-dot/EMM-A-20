@@ -66,8 +66,8 @@ public Program()
 
     carrierConnector = GridTerminalSystem.GetBlockWithName(carrierConnectorName) as IMyShipConnector;
 
-    allGyros     = GetBlocks<IMyGyro>();
-    allThrusters = GetBlocks<IMyThrust>();
+    allGyros     = GetBlocks<IMyGyro>().FindAll(b => HasCarrierTag(b));
+    allThrusters = GetBlocks<IMyThrust>().FindAll(b => HasCarrierTag(b));
     thrust = new ThrusterControl(rc, tickSpeed, allThrusters);
     gyros  = new GyroControl(rc, tickSpeed, allGyros);
 
@@ -639,6 +639,11 @@ bool TryParseVector3(string csv, out Vector3D value)
         return false;
     value = new Vector3D(x, y, z);
     return true;
+}
+
+bool HasCarrierTag(IMyTerminalBlock b)
+{
+    return b.CustomName.IndexOf("EMM-A Ca ", StringComparison.OrdinalIgnoreCase) >= 0;
 }
 
 T GetBlock<T>(bool useSubgrids = false) where T : class, IMyTerminalBlock
