@@ -899,20 +899,30 @@ void WriteOreReportToPathTimer()
         header.AppendLine(kvp.Key + " " + FormatOreAmount(kvp.Value));
     header.AppendLine("----------------------------------");
 
-    // Strip old header (everything up to and including the first --- line)
+    // Strip old header (everything up to and including the first --- line).
+    // If no separator exists yet, all existing lines are path records and are kept.
     string existing2 = timer.CustomData ?? "";
     string[] existingLines = existing2.Split(new[] { '\n', '\r' }, StringSplitOptions.RemoveEmptyEntries);
     var pathPart = new StringBuilder();
     bool pastSeparator = false;
+    bool hasSeparator = false;
     foreach (string line in existingLines)
     {
         if (!pastSeparator)
         {
             if (line.Trim().StartsWith("---"))
+            {
                 pastSeparator = true;
+                hasSeparator = true;
+            }
             continue;
         }
         pathPart.AppendLine(line);
+    }
+    if (!hasSeparator)
+    {
+        foreach (string line in existingLines)
+            pathPart.AppendLine(line);
     }
 
     timer.CustomData = header.ToString() + pathPart.ToString();
