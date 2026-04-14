@@ -883,6 +883,8 @@ void WriteOreReportToPathTimer()
                 if (!string.Equals(item.Type.TypeId, "MyObjectBuilder_Ore", StringComparison.OrdinalIgnoreCase))
                     continue;
                 string subtype = item.Type.SubtypeId;
+                if (string.Equals(subtype, "Stone", StringComparison.OrdinalIgnoreCase))
+                    continue;
                 double existing;
                 oreAmounts.TryGetValue(subtype, out existing);
                 oreAmounts[subtype] = existing + (double)item.Amount;
